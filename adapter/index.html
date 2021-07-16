@@ -469,6 +469,8 @@
 specification. This will usually be an ASGI framework application instance.</li>
 <li><strong>lifespan</strong> - A string to configure lifespan support. Choices are <code>auto</code>, <code>on</code>,
 and <code>off</code>. Default is <code>auto</code>.</li>
+<li><strong>api_gateway_base_path</strong> - Base path to strip from URL when using a custom
+domain name.</li>
 <li><strong>text_mime_types</strong> - A list of MIME types to include with the defaults that
 should not return a binary response in API Gateway.</li>
 <li><strong>dsn</strong> - A connection string required to configure a supported WebSocket backend.</li>
