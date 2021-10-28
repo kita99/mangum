@@ -48,9 +48,12 @@ class AwsWsGateway(AbstractHandler):
         client = (source_ip, 0)
         headers_list = [[k.encode(), v.encode()] for k, v in headers.items()]
 
+        query_parameters = self.trigger_event.get("queryStringParameters", {})
+        path = query_parameters.get("path", "/")
+
         return WsRequest(
             headers=headers_list,
-            path="/",
+            path=path,
             scheme=headers.get("x-forwarded-proto", "wss"),
             query_string=b"",
             server=server,
