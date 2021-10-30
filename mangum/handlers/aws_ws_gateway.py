@@ -1,4 +1,5 @@
 from typing import Any, Dict, Tuple
+import urllib.parse
 import base64
 
 
@@ -51,11 +52,16 @@ class AwsWsGateway(AbstractHandler):
         query_parameters = self.trigger_event.get("queryStringParameters", {})
         path = query_parameters.get("path", "/")
 
+        if path != "/":
+            del query_parameters["path"]
+
+        query_string = urllib.parse.urlencode(query_parameters, doseq=False)
+
         return WsRequest(
             headers=headers_list,
             path=path,
             scheme=headers.get("x-forwarded-proto", "wss"),
-            query_string=b"",
+            query_string=query_string.encode("utf-8"),
             server=server,
             client=client,
             trigger_event=self.trigger_event,
