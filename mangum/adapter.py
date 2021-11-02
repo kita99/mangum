@@ -3,6 +3,7 @@ from contextlib import ExitStack
 from typing import (
     Any,
     ContextManager,
+    Callable,
     Dict,
     Optional,
     TYPE_CHECKING,
@@ -55,6 +56,8 @@ class Mangum:
     dsn: Optional[str] = None
     api_gateway_endpoint_url: Optional[str] = None
     api_gateway_region_name: Optional[str] = None
+    connect_hook: Optional[Callable] = None
+    disconnect_hook: Optional[Callable] = None
 
     def __init__(
         self,
@@ -63,6 +66,8 @@ class Mangum:
         dsn: Optional[str] = None,
         api_gateway_endpoint_url: Optional[str] = None,
         api_gateway_region_name: Optional[str] = None,
+        connect_hook: Optional[Callable] = None,
+        disconnect_hook: Optional[Callable] = None,
         **handler_kwargs: Dict[str, Any]
     ) -> None:
         self.app = app
@@ -71,6 +76,8 @@ class Mangum:
         self.api_gateway_endpoint_url = api_gateway_endpoint_url
         self.api_gateway_region_name = api_gateway_region_name
         self.handler_kwargs = handler_kwargs
+        self.connect_hook = connect_hook
+        self.disconnect_hook = disconnect_hook
 
         if self.lifespan not in ("auto", "on", "off"):
             raise ConfigurationError(
@@ -98,6 +105,8 @@ class Mangum:
                     dsn=self.dsn,
                     api_gateway_endpoint_url=api_gateway_endpoint_url,
                     api_gateway_region_name=self.api_gateway_region_name,
+                    connect_hook=self.connect_hook,
+                    disconnect_hook=self.disconnect_hook,
                 )
                 websocket_cycle = WebSocketCycle(
                     request, handler.message_type, handler.connection_id, websocket

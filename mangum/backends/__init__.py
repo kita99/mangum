@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, Callable
 import json
 from functools import partial
 from dataclasses import dataclass, InitVar
@@ -51,6 +51,8 @@ class WebSocket:
     dsn: InitVar[Optional[str]]
     api_gateway_endpoint_url: str
     api_gateway_region_name: Optional[str] = None
+    connect_hook: Optional[Callable] = None
+    disconnect_hook: Optional[Callable] = None
 
     def __post_init__(self, dsn: Optional[str]) -> None:
         if boto3 is None:  # pragma: no cover
@@ -137,6 +139,10 @@ class WebSocket:
         await backend.save(connection_id, json_scope=json_scope)
 
     async def on_connect(self, connection_id: str, initial_scope: Scope) -> None:
+        if self.connect_hook:
+            self.logger.debug("Calling connect_hook")
+            await self.connect_hook(initial_scope)
+
         self.logger.debug("Creating scope entry for %s", connection_id)
         async with self._Backend(self.dsn) as backend:  # type: ignore
             await self.save_scope(backend, connection_id, initial_scope)
@@ -150,6 +156,11 @@ class WebSocket:
     async def on_disconnect(self, connection_id: str) -> None:
         self.logger.debug("Deleting scope entry for %s", connection_id)
         async with self._Backend(self.dsn) as backend:  # type: ignore
+            if self.disconnect_hook:
+                scope = await self.load_scope(backend, connection_id)
+                self.logger.debug("Calling disconnect_hook")
+                await self.disconnect_hook(scope)
+
             await backend.delete(connection_id)
 
     async def post_to_connection(self, connection_id: str, body: bytes) -> None:

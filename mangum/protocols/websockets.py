@@ -71,7 +71,7 @@ class WebSocketCycle:
 
         if self.message_type == "CONNECT":
             scope = self.request.scope
-            del scope["aws.event"]
+            # del scope["aws.event"]
             del scope["aws.context"]
             self.loop.run_until_complete(
                 self.websocket.on_connect(self.connection_id, scope)
