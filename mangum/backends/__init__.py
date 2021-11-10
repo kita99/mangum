@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import inspect
+
 from typing import Dict, Optional, Callable
 import json
 from functools import partial
@@ -138,10 +140,24 @@ class WebSocket:
         json_scope = json.dumps(scope)
         await backend.save(connection_id, json_scope=json_scope)
 
+    async def call_custom_hook(
+        self,
+        callback: Optional[Callable],
+        hook_type: str,
+        scope: Scope
+    ) -> None:
+        if not callback:
+            return
+
+        if inspect.iscoroutinefunction(callback):
+            self.logger.debug("Calling async %s", hook_type)
+            await callback(scope)
+        else:
+            self.logger.debug("Calling %s", hook_type)
+            callback(scope)
+
     async def on_connect(self, connection_id: str, initial_scope: Scope) -> None:
-        if self.connect_hook:
-            self.logger.debug("Calling connect_hook")
-            await self.connect_hook(initial_scope)
+        await self.call_custom_hook(self.connect_hook, "connect_hook", initial_scope)
 
         self.logger.debug("Creating scope entry for %s", connection_id)
         async with self._Backend(self.dsn) as backend:  # type: ignore
@@ -158,8 +174,11 @@ class WebSocket:
         async with self._Backend(self.dsn) as backend:  # type: ignore
             if self.disconnect_hook:
                 scope = await self.load_scope(backend, connection_id)
-                self.logger.debug("Calling disconnect_hook")
-                await self.disconnect_hook(scope)
+                await self.call_custom_hook(
+                    callback=self.disconnect_hook,
+                    hook_type="disconnect_hook",
+                    scope=scope,
+                )
 
             await backend.delete(connection_id)
 

@@ -84,6 +84,12 @@ class Mangum:
                 "Invalid argument supplied for `lifespan`. Choices are: auto|on|off"
             )
 
+        if connect_hook and not callable(connect_hook):
+            raise Exception("Invalid connect_hook supplied. Must be a callable")
+
+        if disconnect_hook and not callable(disconnect_hook):
+            raise Exception("Invalid disconnect_hook supplied. Must be callable")
+
     def __call__(self, event: dict, context: "LambdaContext") -> dict:
         logger.debug("Event received.")
 
